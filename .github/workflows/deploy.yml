@@ -1,0 +1,36 @@
+name: 🚚 Deploy to Cloud Run
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set_services:
+    runs-on: ubuntu-latest
+
+    outputs:
+      services: ${{ steps.set-services.outputs.services }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set services
+        id: set-services
+        run: |
+          services=$(cat ${{ github.workspace }}/.github/actions/services.yml | ruby -ryaml -rjson -e 'puts YAML.load(STDIN.read)["services"].to_json')
+          echo $services
+          echo "services=${services}" >> $GITHUB_OUTPUT
+        # Equivalent to:
+        # run: |
+        #   services=$(yq e '.services' -o=json .github/actions/services.yml)
+        #   echo $services
+        #   echo "services=${services}" >> $GITHUB_OUTPUT
+
+  call_workflow:
+    needs: set_services
+    uses: ./.github/workflows/reusable_deploy_workflow.yml
+    secrets: inherit
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    with:
+      services: ${{ needs.set_services.outputs.services }}

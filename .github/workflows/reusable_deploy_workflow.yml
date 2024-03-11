@@ -1,0 +1,147 @@
+name: Cloud Run Deployment
+
+on:
+  workflow_call:
+    inputs:
+      services:
+        required: true
+        type: string
+
+env:
+  REGION: asia-northeast1
+  MAX_INSTANCE_LIMIT: 1
+  MEMORY_LIMIT: 256Mi
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.services) }}
+
+    steps:
+      - name: Checkout
+        uses: 'actions/checkout@v4'
+
+      - name: Set up Dart
+        uses: 'dart-lang/setup-dart@v1'
+        with:
+          sdk: stable
+
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: Build
+        run: |
+          dart pub get
+          dart pub run build_runner build --delete-conflicting-outputs
+        working-directory: server/full_dart_server
+
+      - name: Generate Dockerfile
+        run: |
+          rm -f Dockerfile
+          sed -e "s/TARGET_PLACEHOLDER/${{ matrix.service }}/" \
+              -e "s/SIGNATURE_TYPE_PLACEHOLDER/${{ matrix.signature_type }}/" \
+              Dockerfile.template > Dockerfile
+          cat Dockerfile
+
+      - name: Set flags
+        run: |
+          FLAGS="--max-instances ${{ env.MAX_INSTANCE_LIMIT }} --memory=${{ env.MEMORY_LIMIT }}"
+          if [ "${{ matrix.signature_type }}" == "http" ]; then
+            FLAGS="$FLAGS --allow-unauthenticated"
+          fi
+          echo "FLAGS=$FLAGS" >> $GITHUB_ENV
+          echo $GITHUB_ENV
+
+      # https://github.com/google-github-actions/deploy-cloudrun
+      # https://cloud.google.com/blog/products/devops-sre/deploy-to-cloud-run-with-github-actions
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          source: ./
+          service: ${{ matrix.service }}
+          region: ${{ env.REGION }}
+          flags: ${{ env.FLAGS }}
+          env_vars: ENVIRONMENT=production
+          secrets: |
+            PROJECT_ID=PROJECT_ID:latest
+            CLIENT_ID=CLIENT_ID:latest
+            CLIENT_EMAIL=CLIENT_EMAIL:latest
+            PRIVATE_KEY=PRIVATE_KEY:latest
+
+      - name: Create Eventarc Trigger
+        if: ${{ matrix.signature_type == 'cloudevent' }}
+        run: |
+          if ! gcloud eventarc triggers describe ${{ matrix.service }} --location=${{ env.REGION }} --project=${{ secrets.PROJECT_ID }} > /dev/null 2>&1; then
+            echo "Trigger does not exist. Creating trigger."
+            gcloud eventarc triggers create ${{ matrix.service }} \
+              --location=${{ env.REGION }} \
+              --destination-run-service=${{ matrix.service }} \
+              --event-filters="type=${{ matrix.event_type }}" \
+              --event-filters="database=(default)" \
+              --event-filters="namespace=(default)" \
+              --event-filters-path-pattern="${{ matrix.path_pattern }}" \
+              --event-data-content-type="application/protobuf" \
+              --service-account="${{ secrets.EVENTARC_SERVICE_ACCOUNT }}" \
+              --project=${{ secrets.PROJECT_ID }}
+          else
+            echo "Trigger already exists. Skipping creation."
+          fi
+
+  cleanup:
+    needs: deploy
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: 'actions/checkout@v4'
+
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: Cleanup Services
+        run: |
+          services=$(echo '${{ inputs.services }}' | ruby -rjson -e 'puts JSON.parse(STDIN.read).map { |s| s["service"] }.join(" ")')
+          deployed_services=$(gcloud run services list --platform managed --region ${{ env.REGION }} --project ${{ secrets.PROJECT_ID }} --format="value(name)")
+
+          services_to_delete=()
+          for service in $deployed_services; do
+            if [[ ! $services =~ $service ]]; then
+              services_to_delete+=($service)
+            fi
+          done
+
+          if [ ${#services_to_delete[@]} -eq 0 ]; then
+            echo "No services to delete."
+          else
+            echo "Services to delete: ${services_to_delete[@]}"
+            for service in "${services_to_delete[@]}"; do
+              echo "Deleting service: $service"
+              gcloud run services delete $service \
+                --platform managed \
+                --region ${{ env.REGION }} \
+                --project ${{ secrets.PROJECT_ID }} \
+                --quiet
+            done
+          fi
