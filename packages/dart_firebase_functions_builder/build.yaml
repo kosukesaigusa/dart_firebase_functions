@@ -1,0 +1,10 @@
+builders:
+  dart_firebase_functions_builder:
+    import: package:dart_firebase_functions_builder/builder.dart
+    builder_factories:
+      - dartFirebaseFunctionsBuilder
+    build_extensions:
+      'lib/functions.dart':
+        - bin/server.dart
+    auto_apply: dependents
+    build_to: source
