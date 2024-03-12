@@ -77,33 +77,171 @@ class QueryDocumentSnapshot {
   }
 }
 
+enum FirestoreDocumentEventType { v1Created, v1Updated, v1Deleted, v1Written }
+
+sealed class FirestoreTriggeredEventData {
+  const FirestoreTriggeredEventData({required this.eventType});
+
+  final FirestoreDocumentEventType eventType;
+
+  QueryDocumentSnapshot get snapshot => switch (eventType) {
+        FirestoreDocumentEventType.v1Created =>
+          (this as DocumentCreatedData).snapshot,
+        FirestoreDocumentEventType.v1Updated => throw UnimplementedError(),
+        FirestoreDocumentEventType.v1Deleted =>
+          (this as DocumentDeletedData).snapshot,
+        FirestoreDocumentEventType.v1Written => throw UnimplementedError(),
+      };
+
+  Change get change => switch (eventType) {
+        FirestoreDocumentEventType.v1Created => throw UnimplementedError(),
+        FirestoreDocumentEventType.v1Updated => Change(
+            before: (this as DocumentUpdatedData).snapshots.before,
+            after: (this as DocumentUpdatedData).snapshots.after,
+          ),
+        FirestoreDocumentEventType.v1Deleted => throw UnimplementedError(),
+        FirestoreDocumentEventType.v1Written => throw UnimplementedError(),
+      };
+
+  MaybeChange get maybeChange => switch (eventType) {
+        FirestoreDocumentEventType.v1Created => throw UnimplementedError(),
+        FirestoreDocumentEventType.v1Updated => throw UnimplementedError(),
+        FirestoreDocumentEventType.v1Deleted => throw UnimplementedError(),
+        FirestoreDocumentEventType.v1Written => MaybeChange(
+            before: (this as DocumentWrittenData).values.before,
+            after: (this as DocumentWrittenData).values.after,
+          ),
+      };
+}
+
+class DocumentCreatedData extends FirestoreTriggeredEventData {
+  DocumentCreatedData({required super.eventType, required this.snapshot});
+
+  @override
+  final QueryDocumentSnapshot snapshot;
+}
+
+class DocumentUpdatedData extends FirestoreTriggeredEventData {
+  DocumentUpdatedData({required super.eventType, required this.snapshots});
+
+  final ({QueryDocumentSnapshot before, QueryDocumentSnapshot after}) snapshots;
+}
+
+class DocumentDeletedData extends FirestoreTriggeredEventData {
+  DocumentDeletedData({required super.eventType, required this.snapshot});
+
+  @override
+  final QueryDocumentSnapshot snapshot;
+}
+
+class DocumentWrittenData extends FirestoreTriggeredEventData {
+  DocumentWrittenData({required super.eventType, required this.values});
+
+  final ({QueryDocumentSnapshot? before, QueryDocumentSnapshot? after}) values;
+}
+
+class Change {
+  Change({required this.before, required this.after});
+
+  final QueryDocumentSnapshot before;
+
+  final QueryDocumentSnapshot after;
+
+  ({QueryDocumentSnapshot before, QueryDocumentSnapshot after}) toRecord() =>
+      (before: before, after: after);
+}
+
+// TODO: Update class name.
+class MaybeChange {
+  MaybeChange({required this.before, required this.after});
+
+  final QueryDocumentSnapshot? before;
+
+  final QueryDocumentSnapshot? after;
+
+  ({QueryDocumentSnapshot? before, QueryDocumentSnapshot? after}) toRecord() =>
+      (before: before, after: after);
+}
+
 class QueryDocumentSnapshotBuilder {
-  QueryDocumentSnapshot onCreated(CloudEvent event) {
+  QueryDocumentSnapshotBuilder(this.event);
+
+  final CloudEvent event;
+
+  FirestoreTriggeredEventData fromCloudEvent() {
+    final type = event.type;
+    return switch (type) {
+      'google.cloud.firestore.document.v1.created' => _onCreated(event),
+      'google.cloud.firestore.document.v1.updated' => _onUpdated(event),
+      'google.cloud.firestore.document.v1.deleted' => _onDeleted(event),
+      'google.cloud.firestore.document.v1.written' => _onWritten(event),
+      _ => throw ArgumentError.value(
+          type,
+          'event',
+          "Couldn't parse CloudEvent type: $type",
+        ),
+    };
+  }
+
+  DocumentCreatedData _onCreated(CloudEvent event) {
     final documentEventData =
         proto.DocumentEventData.fromBuffer(event.data! as List<int>);
     final path = subjectPathFromCloudEvent(event);
     final value = documentEventData.value;
-    return QueryDocumentSnapshot._(
-      ref: FirebaseFunctions.firestore.doc(path),
-      createTime:
-          admin_firestore.Timestamp.fromDate(value.createTime.toDateTime()),
-      updateTime:
-          admin_firestore.Timestamp.fromDate(value.updateTime.toDateTime()),
-      document: value,
+    return DocumentCreatedData(
+      eventType: FirestoreDocumentEventType.v1Created,
+      snapshot: QueryDocumentSnapshot._(
+        ref: FirebaseFunctions.firestore.doc(path),
+        createTime:
+            admin_firestore.Timestamp.fromDate(value.createTime.toDateTime()),
+        updateTime:
+            admin_firestore.Timestamp.fromDate(value.updateTime.toDateTime()),
+        document: value,
+      ),
     );
   }
 
-  ({
-    QueryDocumentSnapshot before,
-    QueryDocumentSnapshot after,
-  }) onUpdated(CloudEvent event) {
+  DocumentUpdatedData _onUpdated(CloudEvent event) {
     final documentEventData =
         proto.DocumentEventData.fromBuffer(event.data! as List<int>);
     final path = subjectPathFromCloudEvent(event);
     final value = documentEventData.value;
     final oldValue = documentEventData.oldValue;
-    return (
-      before: QueryDocumentSnapshot._(
+    return DocumentUpdatedData(
+      eventType: FirestoreDocumentEventType.v1Updated,
+      snapshots: (
+        before: QueryDocumentSnapshot._(
+          ref: FirebaseFunctions.firestore.doc(path),
+          createTime: admin_firestore.Timestamp.fromDate(
+            oldValue.createTime.toDateTime(),
+          ),
+          updateTime: admin_firestore.Timestamp.fromDate(
+            oldValue.updateTime.toDateTime(),
+          ),
+          document: oldValue,
+        ),
+        after: QueryDocumentSnapshot._(
+          ref: FirebaseFunctions.firestore.doc(path),
+          createTime: admin_firestore.Timestamp.fromDate(
+            value.createTime.toDateTime(),
+          ),
+          updateTime: admin_firestore.Timestamp.fromDate(
+            value.updateTime.toDateTime(),
+          ),
+          document: value,
+        ),
+      ),
+    );
+  }
+
+  DocumentDeletedData _onDeleted(CloudEvent event) {
+    final documentEventData =
+        proto.DocumentEventData.fromBuffer(event.data! as List<int>);
+    final path = subjectPathFromCloudEvent(event);
+    final oldValue = documentEventData.oldValue;
+    return DocumentDeletedData(
+      eventType: FirestoreDocumentEventType.v1Deleted,
+      snapshot: QueryDocumentSnapshot._(
         ref: FirebaseFunctions.firestore.doc(path),
         createTime: admin_firestore.Timestamp.fromDate(
           oldValue.createTime.toDateTime(),
@@ -113,64 +251,40 @@ class QueryDocumentSnapshotBuilder {
         ),
         document: oldValue,
       ),
-      after: QueryDocumentSnapshot._(
-        ref: FirebaseFunctions.firestore.doc(path),
-        createTime: admin_firestore.Timestamp.fromDate(
-          value.createTime.toDateTime(),
-        ),
-        updateTime: admin_firestore.Timestamp.fromDate(
-          value.updateTime.toDateTime(),
-        ),
-        document: value,
-      )
     );
   }
 
-  QueryDocumentSnapshot onDeleted(CloudEvent event) {
-    final documentEventData =
-        proto.DocumentEventData.fromBuffer(event.data! as List<int>);
-    final path = subjectPathFromCloudEvent(event);
-    final oldValue = documentEventData.oldValue;
-    return QueryDocumentSnapshot._(
-      ref: FirebaseFunctions.firestore.doc(path),
-      createTime:
-          admin_firestore.Timestamp.fromDate(oldValue.createTime.toDateTime()),
-      updateTime:
-          admin_firestore.Timestamp.fromDate(oldValue.updateTime.toDateTime()),
-      document: oldValue,
-    );
-  }
-
-  ({
-    QueryDocumentSnapshot before,
-    QueryDocumentSnapshot after,
-  }) onWritten(CloudEvent event) {
+  DocumentWrittenData _onWritten(CloudEvent event) {
     final documentEventData =
         proto.DocumentEventData.fromBuffer(event.data! as List<int>);
     final path = subjectPathFromCloudEvent(event);
     final value = documentEventData.value;
     final oldValue = documentEventData.oldValue;
-    return (
-      before: QueryDocumentSnapshot._(
-        ref: FirebaseFunctions.firestore.doc(path),
-        createTime: admin_firestore.Timestamp.fromDate(
-          oldValue.createTime.toDateTime(),
+    return DocumentWrittenData(
+      eventType: FirestoreDocumentEventType.v1Written,
+      values: (
+        // TODO: Can be null?
+        before: QueryDocumentSnapshot._(
+          ref: FirebaseFunctions.firestore.doc(path),
+          createTime: admin_firestore.Timestamp.fromDate(
+            oldValue.createTime.toDateTime(),
+          ),
+          updateTime: admin_firestore.Timestamp.fromDate(
+            oldValue.updateTime.toDateTime(),
+          ),
+          document: oldValue,
         ),
-        updateTime: admin_firestore.Timestamp.fromDate(
-          oldValue.updateTime.toDateTime(),
+        after: QueryDocumentSnapshot._(
+          ref: FirebaseFunctions.firestore.doc(path),
+          createTime: admin_firestore.Timestamp.fromDate(
+            value.createTime.toDateTime(),
+          ),
+          updateTime: admin_firestore.Timestamp.fromDate(
+            value.updateTime.toDateTime(),
+          ),
+          document: value,
         ),
-        document: oldValue,
       ),
-      after: QueryDocumentSnapshot._(
-        ref: FirebaseFunctions.firestore.doc(path),
-        createTime: admin_firestore.Timestamp.fromDate(
-          value.createTime.toDateTime(),
-        ),
-        updateTime: admin_firestore.Timestamp.fromDate(
-          value.updateTime.toDateTime(),
-        ),
-        document: value,
-      )
     );
   }
 }

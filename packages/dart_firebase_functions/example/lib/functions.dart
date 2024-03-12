@@ -1,15 +1,17 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-
-import 'dart_firebase_functions/annotations.dart';
-import 'dart_firebase_functions/firebase_functions.dart';
+import 'package:dart_firebase_functions/dart_firebase_functions.dart';
 
 FirebaseAdminApp initializeAdminApp() => FirebaseAdminApp.initializeApp(
       'project-id',
-      throw UnimplementedError(),
+      Credential.fromServiceAccountParams(
+        clientId: 'client-id',
+        privateKey: 'private-key',
+        email: 'email',
+      ),
     );
 
 @OnDocumentCreated('todos/{todoId}')
-Future<void> onCreateTodo(
+Future<void> oncreatetodo(
   ({String todoId}) params,
   QueryDocumentSnapshot snapshot,
 ) async {
@@ -18,7 +20,7 @@ Future<void> onCreateTodo(
 }
 
 @OnDocumentUpdated('todos/{todoId}')
-Future<void> onUpdateTodo(
+Future<void> onupdatetodo(
   ({String todoId}) params,
   ({QueryDocumentSnapshot before, QueryDocumentSnapshot after}) snapshot,
 ) async {
@@ -27,23 +29,31 @@ Future<void> onUpdateTodo(
   final after = snapshot.after.data();
 }
 
+@OnDocumentDeleted('todos/{todoId}')
+Future<void> ondeletetodo(
+  ({String todoId}) params,
+  QueryDocumentSnapshot snapshot,
+) async {
+  final todoId = params.todoId;
+  final data = snapshot.data();
+}
+
+@OnDocumentWritten('todos/{todoId}')
+Future<void> onwritetodo(
+  ({String todoId}) params,
+  ({QueryDocumentSnapshot? before, QueryDocumentSnapshot? after}) snapshot,
+) async {
+  final todoId = params.todoId;
+  final before = snapshot.before?.data();
+  final after = snapshot.after?.data();
+}
+
 @OnDocumentCreated('todos/{todoId}/logs/{logId}')
-Future<void> onCreateLog(
+Future<void> oncreatelog(
   ({String todoId, String logId}) params,
   QueryDocumentSnapshot snapshot,
 ) async {
   final todoId = params.todoId;
   final logId = params.logId;
-  final data = snapshot.data();
-}
-
-@OnDocumentCreated('todos/{todoId}/logs/{logId}/foos/{fooId}')
-Future<void> onCreateFoo(
-  ({String todoId, String logId, String fooId}) params,
-  QueryDocumentSnapshot snapshot,
-) async {
-  final todoId = params.todoId;
-  final logId = params.logId;
-  final fooId = params.fooId;
   final data = snapshot.data();
 }

@@ -1,0 +1,5 @@
+dependency_overrides:
+  dart_firebase_functions:
+    path: ../../dart_firebase_functions
+  dart_firebase_functions_builder:
+    path: ../../dart_firebase_functions_builder

@@ -1,22 +1,26 @@
-class OnDocumentCreated {
+sealed class FirestoreTriggeredAnnotation {
+  const FirestoreTriggeredAnnotation();
+}
+
+class OnDocumentCreated extends FirestoreTriggeredAnnotation {
   const OnDocumentCreated(this.document);
 
   final String document;
 }
 
-class OnDocumentUpdated {
+class OnDocumentUpdated extends FirestoreTriggeredAnnotation {
   const OnDocumentUpdated(this.document);
 
   final String document;
 }
 
-class OnDocumentDeleted {
+class OnDocumentDeleted extends FirestoreTriggeredAnnotation {
   const OnDocumentDeleted(this.document);
 
   final String document;
 }
 
-class OnDocumentWritten {
+class OnDocumentWritten extends FirestoreTriggeredAnnotation {
   const OnDocumentWritten(this.document);
 
   final String document;
