@@ -69,12 +69,10 @@ class QueryDocumentSnapshot {
 
   final proto.Document _document;
 
-  Map<String, Object?>? data() {
-    return {
-      for (final field in _document.fields.entries)
-        field.key: _decodeValue(field.value),
-    };
-  }
+  Map<String, Object?>? data() => {
+        for (final field in _document.fields.entries)
+          field.key: _decodeValue(field.value),
+      };
 }
 
 enum FirestoreDocumentEventType { v1Created, v1Updated, v1Deleted, v1Written }
