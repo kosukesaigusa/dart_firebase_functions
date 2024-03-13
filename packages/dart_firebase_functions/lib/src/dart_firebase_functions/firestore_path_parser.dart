@@ -1,12 +1,12 @@
 class FirestorePathParser {
-  FirestorePathParser(this.pattern) {
-    _validatePattern(pattern);
+  FirestorePathParser(this.pathPattern) {
+    _validatePattern(pathPattern);
   }
 
-  final String pattern;
+  final String pathPattern;
 
   Map<String, String> parse(String path) {
-    final patternSegments = pattern.split('/');
+    final patternSegments = pathPattern.split('/');
     final pathSegments = path.replaceFirst('documents/', '').split('/');
 
     if (patternSegments.length != pathSegments.length) {

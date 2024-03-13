@@ -50,8 +50,8 @@ class _DartFirebaseFunctionsBuilder implements Builder {
         """
 '$key' => FunctionTarget.cloudEvent(
   (event) {
-    const document = '${entries[key]!.pathPattern}';
-    final documentIds = FirestorePathParser(document).parse(event.subject!);
+    const pathPattern = '${entries[key]!.pathPattern}';
+    final documentIds = FirestorePathParser(pathPattern).parse(event.subject!);
     final data = QueryDocumentSnapshotBuilder(event).fromCloudEvent();
     return function_library.$key((${entries[key]!.documentIds.map(
               (documentId) => "$documentId: documentIds['$documentId']!",
