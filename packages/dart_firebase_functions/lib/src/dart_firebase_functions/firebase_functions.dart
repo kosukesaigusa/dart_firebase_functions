@@ -259,31 +259,36 @@ class QueryDocumentSnapshotBuilder {
         proto.DocumentEventData.fromBuffer(event.data! as List<int>);
     final path = subjectPathFromCloudEvent(event);
     final value = documentEventData.value;
+    final hasValue = value.fields.isNotEmpty;
     final oldValue = documentEventData.oldValue;
+    final hasOldValue = oldValue.fields.isNotEmpty;
     return DocumentWrittenData(
       eventType: FirestoreDocumentEventType.v1Written,
       values: (
-        // TODO: Can be null?
-        before: QueryDocumentSnapshot._(
-          ref: FirebaseFunctions.firestore.doc(path),
-          createTime: admin_firestore.Timestamp.fromDate(
-            oldValue.createTime.toDateTime(),
-          ),
-          updateTime: admin_firestore.Timestamp.fromDate(
-            oldValue.updateTime.toDateTime(),
-          ),
-          document: oldValue,
-        ),
-        after: QueryDocumentSnapshot._(
-          ref: FirebaseFunctions.firestore.doc(path),
-          createTime: admin_firestore.Timestamp.fromDate(
-            value.createTime.toDateTime(),
-          ),
-          updateTime: admin_firestore.Timestamp.fromDate(
-            value.updateTime.toDateTime(),
-          ),
-          document: value,
-        ),
+        before: hasOldValue
+            ? QueryDocumentSnapshot._(
+                ref: FirebaseFunctions.firestore.doc(path),
+                createTime: admin_firestore.Timestamp.fromDate(
+                  oldValue.createTime.toDateTime(),
+                ),
+                updateTime: admin_firestore.Timestamp.fromDate(
+                  oldValue.updateTime.toDateTime(),
+                ),
+                document: oldValue,
+              )
+            : null,
+        after: hasValue
+            ? QueryDocumentSnapshot._(
+                ref: FirebaseFunctions.firestore.doc(path),
+                createTime: admin_firestore.Timestamp.fromDate(
+                  value.createTime.toDateTime(),
+                ),
+                updateTime: admin_firestore.Timestamp.fromDate(
+                  value.updateTime.toDateTime(),
+                ),
+                document: value,
+              )
+            : null,
       ),
     );
   }
