@@ -48,7 +48,7 @@ FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
           final data = QueryDocumentSnapshotBuilder(event).fromCloudEvent();
           return function_library.onwritetodo(
             (todoId: documentIds['todoId']!),
-            data.change.toRecord(),
+            data.maybeChange.toRecord(),
           );
         }),
       'oncreatelog' => FunctionTarget.cloudEvent((event) {
