@@ -1,14 +1,9 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_functions/dart_firebase_functions.dart';
 
-FirebaseAdminApp initializeAdminApp() => FirebaseAdminApp.initializeApp(
-      'project-id',
-      Credential.fromServiceAccountParams(
-        clientId: 'client-id',
-        privateKey: 'private-key',
-        email: 'email',
-      ),
-    );
+import 'config/config.dart';
+
+FirebaseAdminApp initializeAdminApp() => adminApp;
 
 @OnDocumentCreated('todos/{todoId}')
 Future<void> oncreatetodo(
