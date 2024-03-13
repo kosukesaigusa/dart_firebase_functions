@@ -91,9 +91,9 @@ sealed class FirestoreTriggeredEventData {
         FirestoreDocumentEventType.v1Written => throw UnimplementedError(),
       };
 
-  Change get change => switch (eventType) {
+  DocumentChange get change => switch (eventType) {
         FirestoreDocumentEventType.v1Created => throw UnimplementedError(),
-        FirestoreDocumentEventType.v1Updated => Change(
+        FirestoreDocumentEventType.v1Updated => DocumentChange(
             before: (this as DocumentUpdatedData).snapshots.before,
             after: (this as DocumentUpdatedData).snapshots.after,
           ),
@@ -101,11 +101,11 @@ sealed class FirestoreTriggeredEventData {
         FirestoreDocumentEventType.v1Written => throw UnimplementedError(),
       };
 
-  MaybeChange get maybeChange => switch (eventType) {
+  OptionalDocumentChange get optionalChange => switch (eventType) {
         FirestoreDocumentEventType.v1Created => throw UnimplementedError(),
         FirestoreDocumentEventType.v1Updated => throw UnimplementedError(),
         FirestoreDocumentEventType.v1Deleted => throw UnimplementedError(),
-        FirestoreDocumentEventType.v1Written => MaybeChange(
+        FirestoreDocumentEventType.v1Written => OptionalDocumentChange(
             before: (this as DocumentWrittenData).values.before,
             after: (this as DocumentWrittenData).values.after,
           ),
@@ -138,28 +138,19 @@ class DocumentWrittenData extends FirestoreTriggeredEventData {
   final ({QueryDocumentSnapshot? before, QueryDocumentSnapshot? after}) values;
 }
 
-class Change {
-  Change({required this.before, required this.after});
+class _DocumentChange<T extends QueryDocumentSnapshot?> {
+  _DocumentChange({required this.before, required this.after});
 
-  final QueryDocumentSnapshot before;
+  final T before;
 
-  final QueryDocumentSnapshot after;
+  final T after;
 
-  ({QueryDocumentSnapshot before, QueryDocumentSnapshot after}) toRecord() =>
-      (before: before, after: after);
+  ({T before, T after}) toRecord() => (before: before, after: after);
 }
 
-// TODO: Update class name.
-class MaybeChange {
-  MaybeChange({required this.before, required this.after});
+typedef DocumentChange = _DocumentChange<QueryDocumentSnapshot>;
 
-  final QueryDocumentSnapshot? before;
-
-  final QueryDocumentSnapshot? after;
-
-  ({QueryDocumentSnapshot? before, QueryDocumentSnapshot? after}) toRecord() =>
-      (before: before, after: after);
-}
+typedef OptionalDocumentChange = _DocumentChange<QueryDocumentSnapshot?>;
 
 class QueryDocumentSnapshotBuilder {
   QueryDocumentSnapshotBuilder(this.event);

@@ -59,7 +59,8 @@ class _DartFirebaseFunctionsBuilder implements Builder {
           FirestoreDocumentEventType.v1Created => 'data.snapshot',
           FirestoreDocumentEventType.v1Updated => 'data.change.toRecord()',
           FirestoreDocumentEventType.v1Deleted => 'data.snapshot',
-          FirestoreDocumentEventType.v1Written => 'data.maybeChange.toRecord()',
+          FirestoreDocumentEventType.v1Written =>
+            'data.optionalChange.toRecord()',
         }},);
   }),
 """,
