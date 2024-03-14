@@ -1,6 +1,7 @@
 // ignore_for_file: directives_ordering, depend_on_referenced_packages
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:io' as _i7;
+import 'dart:io';
 import 'dart:isolate' as _i5;
 
 import 'package:build_resolvers/builder.dart' as _i4;
@@ -43,6 +44,10 @@ void main(
   List<String> args, [
   _i5.SendPort? sendPort,
 ]) async {
+  final buildDirectory = Directory('.dart_tool/build');
+  if (buildDirectory.existsSync()) {
+    await buildDirectory.delete(recursive: true);
+  }
   final result = await _i6.run(
     ['build', '-d'],
     _builders,
