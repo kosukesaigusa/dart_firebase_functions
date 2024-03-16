@@ -1,5 +1,7 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_functions/dart_firebase_functions.dart';
+import 'package:functions_framework/functions_framework.dart';
+import 'package:shelf/shelf.dart';
 
 import 'config/config.dart';
 
@@ -9,6 +11,7 @@ FirebaseAdminApp initializeAdminApp() => adminApp;
 Future<void> oncreatetodo(
   ({String todoId}) params,
   QueryDocumentSnapshot snapshot,
+  RequestContext context,
 ) async {
   final todoId = params.todoId;
   final data = snapshot.data();
@@ -18,6 +21,7 @@ Future<void> oncreatetodo(
 Future<void> onupdatetodo(
   ({String todoId}) params,
   ({QueryDocumentSnapshot before, QueryDocumentSnapshot after}) snapshot,
+  RequestLogger logger,
 ) async {
   final todoId = params.todoId;
   final before = snapshot.before.data();
@@ -52,3 +56,6 @@ Future<void> oncreatelog(
   final logId = params.logId;
   final data = snapshot.data();
 }
+
+@HTTPFunction()
+Future<void> hello(Request request, RequestLogger logger) async {}

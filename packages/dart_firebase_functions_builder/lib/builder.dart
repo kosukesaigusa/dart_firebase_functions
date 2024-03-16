@@ -1,11 +1,13 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-import 'package:dart_firebase_functions/dart_firebase_functions.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as path;
 import 'package:source_gen/source_gen.dart';
 
 import 'src/constants.dart';
+import 'src/factory_data.dart';
+import 'src/parser.dart';
+import 'src/templates/case_template.dart';
 
 Builder dartFirebaseFunctionsBuilder([BuilderOptions? options]) =>
     const _DartFirebaseFunctionsBuilder();
@@ -20,12 +22,13 @@ class _DartFirebaseFunctionsBuilder implements Builder {
 
   @override
   Future<void> build(BuildStep buildStep) async {
-    final entries = <String, _FactoryData>{};
+    final entries = <String, FactoryData>{};
     final input = buildStep.inputId;
     final libraryElement = await buildStep.resolver.libraryFor(input);
-    print('a');
+    final annotatedElements =
+        extractAnnotatedElementFromLibrary(libraryElement);
 
-    for (final annotatedElement in _fromLibrary(libraryElement)) {
+    for (final annotatedElement in annotatedElements) {
       final element = annotatedElement.element;
       if (element is! FunctionElement || element.isPrivate) {
         throw InvalidGenerationSourceError(
@@ -42,28 +45,12 @@ class _DartFirebaseFunctionsBuilder implements Builder {
         );
       }
 
-      entries[targetName] = _FactoryData(element.metadata.first);
+      entries[targetName] = FactoryData.fromFunctionElement(element);
     }
 
     final cases = [
-      for (final key in entries.keys)
-        """
-'$key' => FunctionTarget.cloudEvent(
-  (event) {
-    const pathPattern = '${entries[key]!.pathPattern}';
-    final documentIds = FirestorePathParser(pathPattern).parse(event.subject!);
-    final data = QueryDocumentSnapshotBuilder(event).fromCloudEvent();
-    return function_library.$key((${entries[key]!.documentIds.map(
-              (documentId) => "$documentId: documentIds['$documentId']!",
-            ).join(',')}), ${switch (entries[key]!.firestoreDocumentEventType) {
-          FirestoreDocumentEventType.v1Created => 'data.snapshot',
-          FirestoreDocumentEventType.v1Updated => 'data.change.toRecord()',
-          FirestoreDocumentEventType.v1Deleted => 'data.snapshot',
-          FirestoreDocumentEventType.v1Written =>
-            'data.optionalChange.toRecord()',
-        }},);
-  }),
-""",
+      for (final factoryData in entries.values)
+        CaseTemplate(factoryData).toString(),
     ];
 
     final importDirectives = [
@@ -103,69 +90,5 @@ ${cases.join('\n')}
       ),
       output,
     );
-  }
-}
-
-class _FactoryData {
-  const _FactoryData(this.annotation);
-
-  final ElementAnnotation annotation;
-
-  FirestoreDocumentEventType get firestoreDocumentEventType {
-    final dartType = annotation.computeConstantValue()!.type!;
-    if (const TypeChecker.fromRuntime(OnDocumentCreated)
-        .isExactlyType(dartType)) {
-      return FirestoreDocumentEventType.v1Created;
-    } else if (const TypeChecker.fromRuntime(OnDocumentUpdated)
-        .isExactlyType(dartType)) {
-      return FirestoreDocumentEventType.v1Updated;
-    } else if (const TypeChecker.fromRuntime(OnDocumentDeleted)
-        .isExactlyType(dartType)) {
-      return FirestoreDocumentEventType.v1Deleted;
-    } else if (const TypeChecker.fromRuntime(OnDocumentWritten)
-        .isExactlyType(dartType)) {
-      return FirestoreDocumentEventType.v1Written;
-    } else {
-      throw Exception('Annotation format is not valid.');
-    }
-  }
-
-  String get pathPattern {
-    final source = annotation.toSource();
-    final regex = RegExp("'(.*?)'");
-    final match = regex.firstMatch(source);
-    if (match == null) {
-      throw Exception('Annotation format is not valid.');
-    }
-    return match.group(1)!;
-  }
-
-  List<String> get documentIds {
-    final regex = RegExp(r'\{(\w+)\}');
-    final matches = regex.allMatches(pathPattern);
-    return matches.map((match) => match.group(1) ?? '').toList();
-  }
-}
-
-Iterable<AnnotatedElement> _fromLibrary(LibraryElement library) sync* {
-  final mergedElements = {
-    ...library.topLevelElements,
-    ...library.exportNamespace.definedNames.values,
-  };
-
-  for (final element in mergedElements) {
-    const checker = TypeChecker.fromRuntime(FirestoreTriggeredAnnotation);
-    final annotations = checker.annotationsOf(element).toList();
-
-    if (annotations.isEmpty) {
-      continue;
-    }
-    if (annotations.length > 1) {
-      throw InvalidGenerationSourceError(
-        'Cannot be annotated with `OnDocumentCreated` more than once.',
-        element: element,
-      );
-    }
-    yield AnnotatedElement(ConstantReader(annotations.single), element);
   }
 }
