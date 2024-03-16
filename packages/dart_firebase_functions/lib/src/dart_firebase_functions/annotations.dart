@@ -25,3 +25,7 @@ class OnDocumentWritten extends FirestoreTriggeredAnnotation {
 
   final String document;
 }
+
+class HTTPFunction {
+  const HTTPFunction();
+}
