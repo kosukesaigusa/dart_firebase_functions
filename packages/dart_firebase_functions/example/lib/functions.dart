@@ -21,7 +21,6 @@ Future<void> oncreatetodo(
 Future<void> onupdatetodo(
   ({String todoId}) params,
   ({QueryDocumentSnapshot before, QueryDocumentSnapshot after}) snapshot,
-  RequestLogger logger,
 ) async {
   final todoId = params.todoId;
   final before = snapshot.before.data();
@@ -58,4 +57,5 @@ Future<void> oncreatelog(
 }
 
 @HTTPFunction()
-Future<void> hello(Request request, RequestLogger logger) async {}
+Future<Response> hello(Request request, RequestLogger logger) async =>
+    Response.ok('Hello, world!');

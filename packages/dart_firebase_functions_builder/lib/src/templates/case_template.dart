@@ -14,9 +14,11 @@ class CaseTemplate {
           :final functionName,
           :final hasRequestLoggerParameter,
         ):
-        return hasRequestLoggerParameter
-            ? 'FunctionTarget.http(function_library.$functionName,),'
-            : 'FunctionTarget.httpWithLogger(function_library.$functionName,),';
+        return """
+'$functionName' => FunctionTarget.http${hasRequestLoggerParameter ? 'WithLogger' : ''}(
+  function_library.$functionName,
+),
+""";
       case FirestoreTriggerFactoryData(
           :final functionName,
           :final firestoreDocumentEventType,
@@ -25,23 +27,28 @@ class CaseTemplate {
           :final hasRequestContextParameter,
         ):
         return """
-'$functionName' => FunctionTarget.cloudEvent(
-  (event) {
+'$functionName' => FunctionTarget.cloudEvent${hasRequestContextParameter ? 'WithContext' : ''}(
+  (event${hasRequestContextParameter ? ', context' : ''}) {
     const pathPattern = '$pathPattern';
     final documentIds = FirestorePathParser(pathPattern).parse(event.subject!);
     final data = QueryDocumentSnapshotBuilder(event).fromCloudEvent();
-    return return function_library.$functionName(
-      ${documentIds.map((documentId) => "$documentId: documentIds['$documentId']!").join(',')},
-      ${switch (firestoreDocumentEventType) {
-          FirestoreDocumentEventType.v1Created => 'data.snapshot,',
-          FirestoreDocumentEventType.v1Updated => 'data.change.toRecord(),',
-          FirestoreDocumentEventType.v1Deleted => 'data.snapshot,',
-          FirestoreDocumentEventType.v1Written =>
-            'data.optionalChange.toRecord(),',
-        }}
+    return function_library.$functionName(
+      (${documentIds.map((documentId) => "$documentId: documentIds['$documentId']!").join(',')}),
+      ${_snapshotParameter(firestoreDocumentEventType)},
+      ${hasRequestContextParameter ? 'context,' : ''}
     );
   }),
 """;
     }
   }
+
+  String _snapshotParameter(
+    FirestoreDocumentEventType firestoreDocumentEventType,
+  ) =>
+      switch (firestoreDocumentEventType) {
+        FirestoreDocumentEventType.v1Created => 'data.snapshot',
+        FirestoreDocumentEventType.v1Updated => 'data.change.toRecord()',
+        FirestoreDocumentEventType.v1Deleted => 'data.snapshot',
+        FirestoreDocumentEventType.v1Written => 'data.optionalChange.toRecord()'
+      };
 }

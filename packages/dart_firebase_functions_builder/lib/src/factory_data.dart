@@ -18,19 +18,36 @@ sealed class FactoryData {
         const TypeChecker.fromRuntime(FirestoreTriggeredAnnotation)
             .isAssignableFromType(annotationType);
 
+    final hasRequestLoggerParameter =
+        const TypeChecker.fromRuntime(RequestLogger)
+            .isExactlyType(parameterType);
+    final hasRequestContextParameter =
+        const TypeChecker.fromRuntime(RequestContext)
+            .isExactlyType(parameterType);
+
     if (isHTTPFunction) {
+      if (hasRequestContextParameter) {
+        throw InvalidGenerationSourceError(
+          'RequestContext parameter is not allowed for HTTPFunction.',
+          element: functionElement,
+        );
+      }
       return HTTPFunctionFactoryData._(
         functionElement.name,
-        hasRequestLoggerParameter: const TypeChecker.fromRuntime(RequestLogger)
-            .isExactlyType(parameterType),
+        hasRequestLoggerParameter: hasRequestLoggerParameter,
       );
     } else if (isFirestoreTriggeredFunction) {
+      if (hasRequestLoggerParameter) {
+        throw InvalidGenerationSourceError(
+          'RequestLogger parameter is not allowed for '
+          'FirestoreTriggeredFunction.',
+          element: functionElement,
+        );
+      }
       return FirestoreTriggerFactoryData._(
         functionElement.name,
         annotation: elementAnnotation,
-        hasRequestContextParameter:
-            const TypeChecker.fromRuntime(RequestContext)
-                .isExactlyType(parameterType),
+        hasRequestContextParameter: hasRequestContextParameter,
       );
     }
     throw InvalidGenerationSourceError(

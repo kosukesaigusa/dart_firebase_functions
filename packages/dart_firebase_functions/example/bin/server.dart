@@ -11,7 +11,7 @@ Future<void> main(List<String> args) async {
 }
 
 FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
-      'oncreatetodo' => FunctionTarget.cloudEvent((event) {
+      'oncreatetodo' => FunctionTarget.cloudEventWithContext((event, context) {
           const pathPattern = 'todos/{todoId}';
           final documentIds =
               FirestorePathParser(pathPattern).parse(event.subject!);
@@ -19,6 +19,7 @@ FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
           return function_library.oncreatetodo(
             (todoId: documentIds['todoId']!),
             data.snapshot,
+            context,
           );
         }),
       'onupdatetodo' => FunctionTarget.cloudEvent((event) {
@@ -61,5 +62,8 @@ FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
             data.snapshot,
           );
         }),
+      'hello' => FunctionTarget.httpWithLogger(
+          function_library.hello,
+        ),
       _ => null
     };
