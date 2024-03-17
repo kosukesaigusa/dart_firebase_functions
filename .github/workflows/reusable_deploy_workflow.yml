@@ -54,6 +54,7 @@ jobs:
               -e "s/SIGNATURE_TYPE_PLACEHOLDER/${{ matrix.signature_type }}/" \
               Dockerfile.template > Dockerfile
           cat Dockerfile
+        working-directory: packages/dart_firebase_functions/example
 
       - name: Set flags
         run: |
@@ -70,7 +71,7 @@ jobs:
         id: deploy
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
-          source: ./
+          source: packages/dart_firebase_functions/example
           service: ${{ matrix.service }}
           region: ${{ env.REGION }}
           flags: ${{ env.FLAGS }}
@@ -99,6 +100,7 @@ jobs:
           else
             echo "Trigger already exists. Skipping creation."
           fi
+        working-directory: packages/dart_firebase_functions/example
 
   cleanup:
     needs: deploy
@@ -145,3 +147,4 @@ jobs:
                 --quiet
             done
           fi
+        working-directory: packages/dart_firebase_functions/example
