@@ -92,7 +92,7 @@ jobs:
               --event-filters="type=${{ matrix.event_type }}" \
               --event-filters="database=(default)" \
               --event-filters="namespace=(default)" \
-              --event-filters-path-pattern="${{ matrix.path_pattern }}" \
+              --event-filters-path-pattern="document=${{ matrix.path_pattern }}" \
               --event-data-content-type="application/protobuf" \
               --service-account="${{ secrets.EVENTARC_SERVICE_ACCOUNT }}" \
               --project=${{ secrets.PROJECT_ID }}
