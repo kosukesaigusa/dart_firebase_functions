@@ -71,8 +71,7 @@ sealed class FactoryData {
             'service': functionName,
             'signature_type': 'cloudevent',
             'event_type': firestoreDocumentEventType.eventType,
-            'path_pattern':
-                pathPattern.replaceAll('{', r'\{').replaceAll('}', r'\}'),
+            'path_pattern': pathPattern,
           },
       };
 }
