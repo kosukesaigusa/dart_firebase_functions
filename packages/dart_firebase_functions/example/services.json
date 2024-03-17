@@ -8,37 +8,37 @@
       "service": "oncreatetodo",
       "signature_type": "cloudevent",
       "event_type": "google.cloud.firestore.document.v1.created",
-      "path_pattern": "todos/{todoId}"
+      "path_pattern": "todos/\\{todoId\\}"
     },
     {
       "service": "onupdatetodo",
       "signature_type": "cloudevent",
       "event_type": "google.cloud.firestore.document.v1.updated",
-      "path_pattern": "todos/{todoId}"
+      "path_pattern": "todos/\\{todoId\\}"
     },
     {
       "service": "ondeletetodo",
       "signature_type": "cloudevent",
       "event_type": "google.cloud.firestore.document.v1.deleted",
-      "path_pattern": "todos/{todoId}"
+      "path_pattern": "todos/\\{todoId\\}"
     },
     {
       "service": "onwritetodo",
       "signature_type": "cloudevent",
       "event_type": "google.cloud.firestore.document.v1.written",
-      "path_pattern": "todos/{todoId}"
+      "path_pattern": "todos/\\{todoId\\}"
     },
     {
       "service": "oncreatelog",
       "signature_type": "cloudevent",
       "event_type": "google.cloud.firestore.document.v1.created",
-      "path_pattern": "todos/{todoId}/logs/{logId}"
+      "path_pattern": "todos/\\{todoId\\}/logs/\\{logId\\}"
     },
     {
       "service": "oncreatesubmission",
       "signature_type": "cloudevent",
       "event_type": "google.cloud.firestore.document.v1.created",
-      "path_pattern": "submissions/{submissionId}"
+      "path_pattern": "submissions/\\{submissionId\\}"
     },
     {
       "service": "createfirebaseauthcustomtoken",
