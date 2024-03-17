@@ -1,0 +1,27 @@
+# Official Dart image: https://hub.docker.com/_/dart
+# Specify the Dart SDK base image version using dart:<version> (ex: dart:2.14)
+FROM dart:stable AS build
+
+# Copy server source codes.
+WORKDIR /app
+# COPY common /app/common
+COPY server /app/server
+
+# Resolve app dependencies.
+WORKDIR /app/server/full_dart_server
+RUN dart pub get
+
+# Build server codes.
+RUN dart pub run build_runner build --delete-conflicting-outputs
+RUN dart compile exe bin/server.dart -o bin/server
+
+# Build minimal serving image from AOT-compiled `/server` and required system
+# libraries and configuration files stored in `/runtime/` from the build stage.
+FROM scratch
+COPY --from=build /runtime/ /
+COPY --from=build /app/server/full_dart_server/bin/server /app/server/full_dart_server/bin/
+
+# Start server.
+EXPOSE 8080
+# signature-type: http or cloudevent
+ENTRYPOINT ["/app/server/full_dart_server/bin/server", "--target=TARGET_PLACEHOLDER", "--signature-type=SIGNATURE_TYPE_PLACEHOLDER"]
