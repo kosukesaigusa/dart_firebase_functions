@@ -22,7 +22,7 @@ FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
             context,
           );
         }),
-      'onupdatetodo' => FunctionTarget.cloudEvent((event) {
+      'onupdatetodo' => FunctionTarget.cloudEventWithContext((event, context) {
           const pathPattern = 'todos/{todoId}';
           final documentIds =
               FirestorePathParser(pathPattern).parse(event.subject!);
@@ -30,9 +30,10 @@ FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
           return function_library.onupdatetodo(
             (todoId: documentIds['todoId']!),
             data.change.toRecord(),
+            context,
           );
         }),
-      'ondeletetodo' => FunctionTarget.cloudEvent((event) {
+      'ondeletetodo' => FunctionTarget.cloudEventWithContext((event, context) {
           const pathPattern = 'todos/{todoId}';
           final documentIds =
               FirestorePathParser(pathPattern).parse(event.subject!);
@@ -40,9 +41,10 @@ FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
           return function_library.ondeletetodo(
             (todoId: documentIds['todoId']!),
             data.snapshot,
+            context,
           );
         }),
-      'onwritetodo' => FunctionTarget.cloudEvent((event) {
+      'onwritetodo' => FunctionTarget.cloudEventWithContext((event, context) {
           const pathPattern = 'todos/{todoId}';
           final documentIds =
               FirestorePathParser(pathPattern).parse(event.subject!);
@@ -50,9 +52,10 @@ FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
           return function_library.onwritetodo(
             (todoId: documentIds['todoId']!),
             data.optionalChange.toRecord(),
+            context,
           );
         }),
-      'oncreatelog' => FunctionTarget.cloudEvent((event) {
+      'oncreatelog' => FunctionTarget.cloudEventWithContext((event, context) {
           const pathPattern = 'todos/{todoId}/logs/{logId}';
           final documentIds =
               FirestorePathParser(pathPattern).parse(event.subject!);
@@ -60,10 +63,23 @@ FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
           return function_library.oncreatelog(
             (todoId: documentIds['todoId']!, logId: documentIds['logId']!),
             data.snapshot,
+            context,
           );
         }),
-      'hello' => FunctionTarget.httpWithLogger(
-          function_library.hello,
+      'oncreatesubmission' =>
+        FunctionTarget.cloudEventWithContext((event, context) {
+          const pathPattern = 'submissions/{submissionId}';
+          final documentIds =
+              FirestorePathParser(pathPattern).parse(event.subject!);
+          final data = QueryDocumentSnapshotBuilder(event).fromCloudEvent();
+          return function_library.oncreatesubmission(
+            (submissionId: documentIds['submissionId']!),
+            data.snapshot,
+            context,
+          );
+        }),
+      'createfirebaseauthcustomtoken' => FunctionTarget.httpWithLogger(
+          function_library.createfirebaseauthcustomtoken,
         ),
       _ => null
     };

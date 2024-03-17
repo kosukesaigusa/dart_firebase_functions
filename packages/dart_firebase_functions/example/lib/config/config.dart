@@ -5,14 +5,14 @@ import 'package:dart_firebase_admin/messaging.dart';
 
 import 'environment_variable.dart';
 
-final _environmentVariable = EnvironmentVariable(EnvironmentProvider());
+final environmentVariable = EnvironmentVariable(EnvironmentProvider());
 
 final adminApp = FirebaseAdminApp.initializeApp(
-  _environmentVariable.projectId,
+  environmentVariable.projectId,
   Credential.fromServiceAccountParams(
-    clientId: _environmentVariable.clientId,
-    privateKey: _environmentVariable.privateKey,
-    email: _environmentVariable.clientEmail,
+    clientId: environmentVariable.clientId,
+    privateKey: environmentVariable.privateKey,
+    email: environmentVariable.clientEmail,
   ),
 );
 
