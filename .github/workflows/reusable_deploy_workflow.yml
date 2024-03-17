@@ -70,7 +70,7 @@ jobs:
         id: deploy
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
-          source: packages/dart_firebase_functions/example
+          source: ./
           service: ${{ matrix.service }}
           region: ${{ env.REGION }}
           flags: ${{ env.FLAGS }}

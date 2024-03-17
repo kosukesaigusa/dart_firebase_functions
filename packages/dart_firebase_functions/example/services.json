@@ -1,6 +1,10 @@
 {
   "services": [
     {
+      "service": "hello",
+      "signature_type": "http"
+    },
+    {
       "service": "oncreatetodo",
       "signature_type": "cloudevent",
       "event_type": "google.cloud.firestore.document.v1.created",

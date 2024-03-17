@@ -8,6 +8,9 @@ import 'functions/create_firebase_auth_custom_token.dart';
 
 FirebaseAdminApp initializeAdminApp() => adminApp;
 
+@HTTPFunction()
+Future<Response> hello(Request request) async => Response.ok('Hello, World!');
+
 @OnDocumentCreated('todos/{todoId}')
 Future<void> oncreatetodo(
   ({String todoId}) params,

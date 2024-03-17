@@ -11,6 +11,9 @@ Future<void> main(List<String> args) async {
 }
 
 FunctionTarget? _nameToFunctionTarget(String name) => switch (name) {
+      'hello' => FunctionTarget.http(
+          function_library.hello,
+        ),
       'oncreatetodo' => FunctionTarget.cloudEventWithContext((event, context) {
           const pathPattern = 'todos/{todoId}';
           final documentIds =
