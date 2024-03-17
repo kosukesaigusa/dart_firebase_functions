@@ -1,23 +1,34 @@
+import 'dart:convert';
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart' as path;
 import 'package:source_gen/source_gen.dart';
 
-import 'src/constants.dart';
+import 'src/build_yaml_config.dart';
 import 'src/factory_data.dart';
 import 'src/parser.dart';
 import 'src/templates/case_template.dart';
 
-Builder dartFirebaseFunctionsBuilder([BuilderOptions? options]) =>
-    const _DartFirebaseFunctionsBuilder();
+Builder dartFirebaseFunctionsBuilder(BuilderOptions options) =>
+    _DartFirebaseFunctionsBuilder(
+      BuildYamlConfig.fromBuildYaml(options.config),
+    );
 
 class _DartFirebaseFunctionsBuilder implements Builder {
-  const _DartFirebaseFunctionsBuilder();
+  const _DartFirebaseFunctionsBuilder(this._buildYamlConfig);
+
+  /// A [BuildYamlConfig] instance containing configuration from `build.yaml`.
+  final BuildYamlConfig _buildYamlConfig;
 
   @override
-  Map<String, List<String>> get buildExtensions => const {
-        'lib/functions.dart': ['bin/server.dart'],
+  Map<String, List<String>> get buildExtensions => {
+        'lib/functions.dart': [
+          'bin/server.dart',
+          if (_buildYamlConfig.generateServicesJson)
+            _buildYamlConfig.servicesJsonPath,
+        ],
       };
 
   @override
@@ -56,7 +67,7 @@ class _DartFirebaseFunctionsBuilder implements Builder {
     final importDirectives = [
       "'package:dart_firebase_functions/dart_firebase_functions.dart'",
       "'package:functions_framework/serve.dart'",
-      "'${input.uri}' as $functionsLibraryPrefix",
+      "'${input.uri}' as function_library",
     ]..sort();
 
     var output = '''
@@ -84,11 +95,20 @@ ${cases.join('\n')}
     }
 
     await buildStep.writeAsString(
-      AssetId(
-        buildStep.inputId.package,
-        path.join('bin', 'server.dart'),
-      ),
+      AssetId(buildStep.inputId.package, path.join('bin', 'server.dart')),
       output,
     );
+
+    if (_buildYamlConfig.generateServicesJson) {
+      final services = entries.values
+          .map((factoryData) => factoryData.toServicesJson())
+          .toList();
+      const jsonEncoder = JsonEncoder.withIndent('  ');
+      final jsonString = jsonEncoder.convert({'services': services});
+      await buildStep.writeAsString(
+        AssetId(buildStep.inputId.package, _buildYamlConfig.servicesJsonPath),
+        jsonString,
+      );
+    }
   }
 }

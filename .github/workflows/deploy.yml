@@ -16,14 +16,9 @@ jobs:
       - name: Set services
         id: set-services
         run: |
-          services=$(cat ${{ github.workspace }}/.github/actions/services.yml | ruby -ryaml -rjson -e 'puts YAML.load(STDIN.read)["services"].to_json')
+          services=$(cat ${{ github.workspace }}/packages/dart_firebase_functions/example/services.json | ruby -rjson -e 'puts JSON.parse(STDIN.read)["services"].to_json')
           echo $services
           echo "services=${services}" >> $GITHUB_OUTPUT
-        # Equivalent to:
-        # run: |
-        #   services=$(yq e '.services' -o=json .github/actions/services.yml)
-        #   echo $services
-        #   echo "services=${services}" >> $GITHUB_OUTPUT
 
   call_workflow:
     needs: set_services

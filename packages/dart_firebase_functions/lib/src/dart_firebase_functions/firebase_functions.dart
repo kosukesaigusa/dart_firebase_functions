@@ -75,7 +75,24 @@ class QueryDocumentSnapshot {
       };
 }
 
-enum FirestoreDocumentEventType { v1Created, v1Updated, v1Deleted, v1Written }
+enum FirestoreDocumentEventType {
+  v1Created,
+  v1Updated,
+  v1Deleted,
+  v1Written,
+  ;
+
+  String get eventType => switch (this) {
+        FirestoreDocumentEventType.v1Created =>
+          'google.cloud.firestore.document.v1.created',
+        FirestoreDocumentEventType.v1Updated =>
+          'google.cloud.firestore.document.v1.updated',
+        FirestoreDocumentEventType.v1Deleted =>
+          'google.cloud.firestore.document.v1.deleted',
+        FirestoreDocumentEventType.v1Written =>
+          'google.cloud.firestore.document.v1.written',
+      };
+}
 
 sealed class FirestoreTriggeredEventData {
   const FirestoreTriggeredEventData({required this.eventType});

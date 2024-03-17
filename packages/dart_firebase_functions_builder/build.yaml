@@ -8,3 +8,7 @@ builders:
         - bin/server.dart
     auto_apply: dependents
     build_to: source
+    defaults:
+      options:
+        generate_services_json: true
+        services_json_path: './services.json'

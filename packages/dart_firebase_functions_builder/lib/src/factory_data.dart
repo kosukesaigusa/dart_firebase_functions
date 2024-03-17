@@ -57,6 +57,23 @@ sealed class FactoryData {
   }
 
   final String functionName;
+
+  Map<String, dynamic> toServicesJson() => switch (this) {
+        HTTPFunctionFactoryData() => {
+            'service': functionName,
+            'signature_type': 'http',
+          },
+        FirestoreTriggerFactoryData(
+          :final firestoreDocumentEventType,
+          :final pathPattern
+        ) =>
+          {
+            'service': functionName,
+            'signature_type': 'cloudevent',
+            'event_type': firestoreDocumentEventType.eventType,
+            'path_pattern': pathPattern,
+          },
+      };
 }
 
 class HTTPFunctionFactoryData extends FactoryData {
