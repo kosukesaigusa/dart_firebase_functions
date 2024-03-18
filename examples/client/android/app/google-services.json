@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "404234034760",
+    "project_id": "full-dart-monorepo",
+    "storage_bucket": "full-dart-monorepo.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404234034760:android:11887914a508c5129ec27d",
+        "android_client_info": {
+          "package_name": "com.kosukesaigusa.full_dart_client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHcQ0URQpIrMpR7dep3oKNNxco92K8Nig"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

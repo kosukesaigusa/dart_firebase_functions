@@ -1,0 +1,6 @@
+# melos_managed_dependency_overrides: dart_firebase_functions
+dependency_overrides:
+  dart_firebase_functions:
+    path: ../../packages/dart_firebase_functions
+  dart_firebase_functions_builder:
+    path: ../../packages/dart_firebase_functions_builder

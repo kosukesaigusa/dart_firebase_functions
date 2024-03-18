@@ -3,10 +3,10 @@
 FROM dart:stable AS build
 
 WORKDIR /app
-COPY packages /app/packages
+COPY . /app
 
 # Resolve app dependencies.
-WORKDIR /app/packages/dart_firebase_functions/example
+WORKDIR /app/examples/server
 RUN dart pub get
 
 # Build server codes.
@@ -17,9 +17,9 @@ RUN dart compile exe bin/server.dart -o bin/server
 # libraries and configuration files stored in `/runtime/` from the build stage.
 FROM scratch
 COPY --from=build /runtime/ /
-COPY --from=build /app/packages/dart_firebase_functions/example/bin/server /app/packages/dart_firebase_functions/example/bin/
+COPY --from=build /app/examples/server/bin/server /app/examples/server/bin/
 
 # Start server.
 EXPOSE 8080
 # signature-type: http or cloudevent
-ENTRYPOINT ["/app/packages/dart_firebase_functions/example/bin/server", "--target=hello", "--signature-type=http"]
+ENTRYPOINT ["/app/examples/server/bin/server", "--target=hello", "--signature-type=http"]
