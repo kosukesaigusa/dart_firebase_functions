@@ -97,7 +97,45 @@ Future<void> oncreatesubmission(
         .get();
     final token = userFcmTokenDocumentSnapshot.data()?['token'] as String?;
     if (token != null) {
-      final messageId = await messaging.send(TokenMessage(token: token));
+      const title = 'Submission Verified';
+      const body = 'Your submission is verified!';
+      final messageId = await messaging.send(
+        TokenMessage(
+          token: token,
+          data: {
+            'title': title,
+            'body': body,
+            'location': '',
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            'id': '1',
+            'status': 'done',
+          },
+          notification: Notification(title: title, body: body),
+          apns: ApnsConfig(
+            headers: {'apns-priority': '10'},
+            payload: ApnsPayload(
+              aps: Aps(
+                contentAvailable: true,
+                badge: 1,
+                sound: null,
+                alert: null,
+                mutableContent: null,
+                category: null,
+                threadId: null,
+              ),
+            ),
+          ),
+          android: AndroidConfig(
+            priority: AndroidConfigPriority.high,
+            notification: AndroidNotification(
+              priority: AndroidNotificationPriority.max,
+              defaultSound: true,
+              channelId: 'high-priority-channel',
+              notificationCount: 1,
+            ),
+          ),
+        ),
+      );
       context.logger.debug(
         'message ($messageId) is sent to user ($submittedByUserId)',
       );
