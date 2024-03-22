@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'auth.dart';
 import 'submission.dart';
 import 'user.dart';
+import 'user_fcm_token.dart';
 
 part 'submission_list.g.dart';
 
@@ -25,6 +26,10 @@ UserQuery userQuery(UserQueryRef _) => UserQuery();
 Stream<User?> user(UserRef ref, String userId) =>
     ref.watch(userQueryProvider).subscribeDocument(userId: userId);
 
+@riverpod
+UserFcmTokenQuery userFcmTokenQuery(UserFcmTokenQueryRef _) =>
+    UserFcmTokenQuery();
+
 class SubmissionListPage extends ConsumerStatefulWidget {
   const SubmissionListPage({super.key});
 
@@ -33,6 +38,25 @@ class SubmissionListPage extends ConsumerStatefulWidget {
 }
 
 class _SubmissionListPageState extends ConsumerState<SubmissionListPage> {
+  @override
+  void initState() {
+    () async {
+      final messaging = FirebaseMessaging.instance;
+      final settings = await messaging.requestPermission();
+      print('User granted permission: ${settings.authorizationStatus}');
+      FirebaseMessaging.onMessage.listen((message) {
+        print('Got a message whilst in the foreground!');
+        print('Message data: ${message.data}');
+        if (message.notification != null) {
+          print(
+            'Message also contained a notification: ${message.notification}',
+          );
+        }
+      });
+    }();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final submissions = ref.watch(submissionsProvider);
@@ -131,7 +155,18 @@ class _SubmissionListPageState extends ConsumerState<SubmissionListPage> {
               FloatingActionButton(
                 onPressed: () async {
                   final token = await FirebaseMessaging.instance.getToken();
+                  if (token == null) {
+                    return;
+                  }
                   print('token: $token');
+                  final userId = ref.read(currentUserIdProvider);
+                  if (userId != null) {
+                    await ref.read(userFcmTokenQueryProvider).set(
+                          userFcmTokenId: userId,
+                          createUserFcmTokenData:
+                              CreateUserFcmTokenData(token: token),
+                        );
+                  }
                 },
                 child: const Icon(Icons.notification_important_rounded),
               ),

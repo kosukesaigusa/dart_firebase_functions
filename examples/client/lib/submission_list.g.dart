@@ -195,5 +195,22 @@ class _UserProviderElement extends AutoDisposeStreamProviderElement<User?>
   @override
   String get userId => (origin as UserProvider).userId;
 }
+
+String _$userFcmTokenQueryHash() => r'79d8352e7829f78b84f2e297ded0216bc33784ba';
+
+/// See also [userFcmTokenQuery].
+@ProviderFor(userFcmTokenQuery)
+final userFcmTokenQueryProvider =
+    AutoDisposeProvider<UserFcmTokenQuery>.internal(
+  userFcmTokenQuery,
+  name: r'userFcmTokenQueryProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$userFcmTokenQueryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef UserFcmTokenQueryRef = AutoDisposeProviderRef<UserFcmTokenQuery>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
