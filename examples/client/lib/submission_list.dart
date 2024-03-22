@@ -65,38 +65,6 @@ class _SubmissionListPageState extends ConsumerState<SubmissionListPage> {
         Scaffold(
           appBar: AppBar(
             title: const Text('Submission List'),
-            actions: [
-              if (ref.watch(authProvider).valueOrNull == null)
-                TextButton(
-                  onPressed: () async {
-                    await ref.read(authProvider.notifier).signInWithLine();
-                    if (!mounted) {
-                      return;
-                    }
-                    ScaffoldMessenger.of(context)
-                      ..removeCurrentSnackBar()
-                      ..showSnackBar(
-                        const SnackBar(content: Text('Signed in.')),
-                      );
-                  },
-                  child: const Text('Sign in'),
-                )
-              else
-                TextButton(
-                  onPressed: () async {
-                    await ref.read(authProvider.notifier).signOut();
-                    if (!mounted) {
-                      return;
-                    }
-                    ScaffoldMessenger.of(context)
-                      ..removeCurrentSnackBar()
-                      ..showSnackBar(
-                        const SnackBar(content: Text('Signed out.')),
-                      );
-                  },
-                  child: const Text('Sign out'),
-                ),
-            ],
           ),
           body: submissions.when(
             data: (submissions) => RefreshIndicator(
@@ -149,38 +117,85 @@ class _SubmissionListPageState extends ConsumerState<SubmissionListPage> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text(e.toString())),
           ),
-          floatingActionButton: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FloatingActionButton(
-                onPressed: () async {
-                  final token = await FirebaseMessaging.instance.getToken();
-                  if (token == null) {
-                    return;
-                  }
-                  print('token: $token');
-                  final userId = ref.read(currentUserIdProvider);
-                  if (userId != null) {
-                    await ref.read(userFcmTokenQueryProvider).set(
-                          userFcmTokenId: userId,
-                          createUserFcmTokenData:
-                              CreateUserFcmTokenData(token: token),
+          bottomNavigationBar: BottomAppBar(
+            color: Colors.white,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (ref.watch(authProvider).valueOrNull == null) ...[
+                  IconButton(
+                    onPressed: () async {
+                      await ref.read(authProvider.notifier).signInAnonymously();
+                      if (!mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context)
+                        ..removeCurrentSnackBar()
+                        ..showSnackBar(
+                          const SnackBar(content: Text('Signed in.')),
                         );
-                  }
-                },
-                child: const Icon(Icons.notification_important_rounded),
-              ),
-              const SizedBox(height: 4),
-              FloatingActionButton(
-                onPressed: () => ref.read(submissionQueryProvider).add(
-                      createSubmissionData: CreateSubmissionData(
-                        title: '${DateTime.now()}',
-                        submittedByUserId: ref.read(currentUserIdProvider),
+                    },
+                    icon: const Icon(Icons.person),
+                  ),
+                  IconButton(
+                    onPressed: () async {
+                      await ref.read(authProvider.notifier).signInWithLine();
+                      if (!mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context)
+                        ..removeCurrentSnackBar()
+                        ..showSnackBar(
+                          const SnackBar(content: Text('Signed in.')),
+                        );
+                    },
+                    icon: const Icon(Icons.person),
+                  ),
+                ] else
+                  TextButton(
+                    onPressed: () async {
+                      await ref.read(authProvider.notifier).signOut();
+                      if (!mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context)
+                        ..removeCurrentSnackBar()
+                        ..showSnackBar(
+                          const SnackBar(content: Text('Signed out.')),
+                        );
+                    },
+                    child: const Text('Sign out'),
+                  ),
+                const Expanded(child: SizedBox()),
+                IconButton(
+                  onPressed: () async {
+                    final token = await FirebaseMessaging.instance.getToken();
+                    if (token == null) {
+                      return;
+                    }
+                    print('token: $token');
+                    final userId = ref.read(currentUserIdProvider);
+                    if (userId != null) {
+                      await ref.read(userFcmTokenQueryProvider).set(
+                            userFcmTokenId: userId,
+                            createUserFcmTokenData:
+                                CreateUserFcmTokenData(token: token),
+                          );
+                    }
+                  },
+                  icon: const Icon(Icons.notification_add),
+                ),
+                IconButton(
+                  onPressed: () => ref.read(submissionQueryProvider).add(
+                        createSubmissionData: CreateSubmissionData(
+                          title: '${DateTime.now()}',
+                          submittedByUserId: ref.read(currentUserIdProvider),
+                        ),
                       ),
-                    ),
-                child: const Icon(Icons.add),
-              ),
-            ],
+                  icon: const Icon(Icons.add_circle),
+                ),
+              ],
+            ),
           ),
         ),
         if (ref.watch(authProvider).isLoading)

@@ -25,6 +25,14 @@ class Auth extends _$Auth {
   @override
   Future<User?> build() async => null;
 
+  Future<void> signInAnonymously() async {
+    state = const AsyncLoading<User?>().copyWithPrevious(state);
+    state = await AsyncValue.guard(() async {
+      final userCredential = await FirebaseAuth.instance.signInAnonymously();
+      return userCredential.user;
+    });
+  }
+
   Future<void> signInWithLine() async {
     state = const AsyncLoading<User?>().copyWithPrevious(state);
     state = await AsyncValue.guard(() async {
