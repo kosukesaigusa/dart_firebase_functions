@@ -1,4 +1,5 @@
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/messaging.dart';
 import 'package:dart_firebase_functions/dart_firebase_functions.dart';
 import 'package:functions_framework/functions_framework.dart';
 import 'package:shelf/shelf.dart';
@@ -90,6 +91,17 @@ Future<void> oncreatesubmission(
     context.logger.debug(
       'submission ($submissionId) submitted by $submittedByUserId is verified',
     );
+    final userFcmTokenDocumentSnapshot = await firestore
+        .collection('userFcmTokens')
+        .doc(submittedByUserId)
+        .get();
+    final token = userFcmTokenDocumentSnapshot.data()?['token'] as String?;
+    if (token != null) {
+      final messageId = await messaging.send(TokenMessage(token: token));
+      context.logger.debug(
+        'message ($messageId) is sent to user ($submittedByUserId)',
+      );
+    }
   } else {
     context.logger.debug(
       '''submission ($submissionId) is not verified because submittedByUserId is null''',
