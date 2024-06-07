@@ -31,6 +31,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+pubspec.lock
 
 # Symbolication related
 app.*.symbols
@@ -52,3 +53,7 @@ test.http
 # Dart & Flutter SDK
 .dvm
 .fvm
+.fvmrc
+
+# melos
+melos.yaml

@@ -126,7 +126,7 @@ class _SubmissionListPageState extends ConsumerState<SubmissionListPage> {
                   IconButton(
                     onPressed: () async {
                       await ref.read(authProvider.notifier).signInAnonymously();
-                      if (!mounted) {
+                      if (!context.mounted) {
                         return;
                       }
                       ScaffoldMessenger.of(context)
@@ -140,7 +140,7 @@ class _SubmissionListPageState extends ConsumerState<SubmissionListPage> {
                   IconButton(
                     onPressed: () async {
                       await ref.read(authProvider.notifier).signInWithLine();
-                      if (!mounted) {
+                      if (!context.mounted) {
                         return;
                       }
                       ScaffoldMessenger.of(context)
@@ -155,7 +155,7 @@ class _SubmissionListPageState extends ConsumerState<SubmissionListPage> {
                   TextButton(
                     onPressed: () async {
                       await ref.read(authProvider.notifier).signOut();
-                      if (!mounted) {
+                      if (!context.mounted) {
                         return;
                       }
                       ScaffoldMessenger.of(context)
@@ -169,6 +169,11 @@ class _SubmissionListPageState extends ConsumerState<SubmissionListPage> {
                 const Expanded(child: SizedBox()),
                 IconButton(
                   onPressed: () async {
+                    final apnsToken =
+                        await FirebaseMessaging.instance.getAPNSToken();
+                    if (apnsToken == null) {
+                      return;
+                    }
                     final token = await FirebaseMessaging.instance.getToken();
                     if (token == null) {
                       return;
