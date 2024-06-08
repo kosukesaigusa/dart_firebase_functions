@@ -1,10 +1,6 @@
 name: dart_firebase_functions
-description: >
-  A comprehensive Dart package that offers Node.js-like Firebase functions capability, 
-  leveraging dart_firebase_admin and functions_framework. This package enables developers 
-  to easily define HTTP and Cloud Firestore triggered functions, streamlining serverless 
-  backend development with Dart and Firebase.
-version: 0.0.1-dev
+description: Enables Dart developers to define HTTP and Cloud Firestore triggered functions, providing Node.js-like Firebase functions capability.
+version: 0.0.1-dev.1
 homepage: https://github.com/kosukesaigusa/dart_firebase_functions
 
 environment:
